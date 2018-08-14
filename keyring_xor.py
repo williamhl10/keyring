@@ -3,9 +3,12 @@
 import random
 from pytictoc import TicToc
 
+global num_chunks
+num_chunks = 4
+
 #solution 2a
 #lam is the security parameter, which is 256 bits
-def KeyGen(lam=256, num_chunks=4):
+def KeyGen(lam=256):
 
 	chunk_size = lam/num_chunks
 
@@ -41,7 +44,7 @@ def KeyGen(lam=256, num_chunks=4):
 
 	return PRF_chunks, GEN_chunks
 
-def Correctness(PRF_chunks, GEN_chunks, num_chunks=4):
+def Correctness(PRF_chunks, GEN_chunks):
 
 	for i in range(0, len(PRF_chunks)):
 		check_forward = PRF_chunks[i] ^ GEN_chunks[i]
@@ -57,12 +60,14 @@ def Correctness(PRF_chunks, GEN_chunks, num_chunks=4):
 	return True
 
 #set1 is the PRF set and set2 is the generated set of strings
-def SecuritySwap(set1, set2, num_chunks=4):
+def SecuritySwap(set1, set2):
 
 	key_set1 = []
 	key_set1_inds = []
 	key_set2 = []
 	key_set2_inds = []
+
+	swapped_inds = [] #list of indices where values in PRF and GEN were swapped, help for InverseSwap
 
 	#form key sets
 	for i in range(0, len(set1)):
@@ -90,17 +95,87 @@ def SecuritySwap(set1, set2, num_chunks=4):
 			key_set1[elt-1] = swap2
 			key_set2_inds[elt-1] = swap1_inds
 			key_set2[elt-1] = swap1
+			swapped_inds.append(elt-1)
 
-	return [(key_set1_inds, key_set1), (key_set2_inds, key_set2)]
+	#print swapped_inds, key_set1_inds, key_set2_inds
 
-def InverseSwap(PRF, GEN, num_chunks=4):
+	return key_set1, key_set1_inds, key_set2, key_set2_inds, swapped_inds
 
-	return
+def InverseSwap(AES, HMAC, AES_inds, HMAC_inds, swapped_inds):
+	#perform inverse swap for the KeyReGen function
+	#swapped_inds contains the indices of elements to be swapped back
+	#essentially moving from AES and HMAC form back to PRF and GEN form
+
+	#first swap back the swapped index, which was done for security
+	for i in swapped_inds:
+
+		swap1 = AES[i]
+		swap2 = HMAC[i]
+		AES[i] = swap2
+		HMAC[i] = swap1
+		hold1 = AES_inds[i]
+		hold2 = HMAC_inds[i]
+		AES_inds[i] = hold2
+		HMAC_inds[i] = hold1
 
 
+	iswapPRF = []
+	iswapGEN = []
+
+	#need to iterate over AES key first to maintain ordering
+	for i in range(0, len(AES)):
+
+		if AES_inds[i] % 2 == 1:
+			iswapPRF.append(AES[i])
+		else:
+			iswapGEN.append(AES[i])
+
+	#now iterate over HMAC key
+	for i in range(0, len(HMAC)):
+
+		if HMAC_inds[i] % 2 == 1:
+			iswapPRF.append(HMAC[i])
+		else:
+			iswapGEN.append(HMAC[i])
+
+	return iswapPRF, iswapGEN
 
 
-def KeyReGen(PRF, GEN, num_chunks=4):
+def KeyReGen(PRF, GEN, swapped_inds):
+	#check if key has been damamged and then correct it
+
+	#function to locate the location of AES and HMAC errors from PRF and GEN locations
+	def LocateError(ind_PRF, ind_GEN):
+
+		if ind_PRF == None:
+			print ind_GEN
+			#GEN ind is the one to explore
+			if ind_GEN not in swapped_inds:
+				if ind_GEN < len(GEN)/2:
+					#in AES key
+					location = (2*ind_GEN + 1) % num_chunks
+					print "hey"
+					note = "AES"
+				else:
+					#in HMAC key
+					location = (2*ind_GEN + 1) % num_chunks
+					note = "HMAC"
+
+		else:
+			print ind_PRF
+			#PRF is the ind to explore
+			if ind_PRF not in swapped_inds:
+				if ind_PRF < len(PRF)/2:
+					#in AES key
+					location = (2*ind_PRF) % num_chunks
+					print "hi"
+					note = "AES"
+				else:
+					#in HMAC key
+					location = (2*ind_PRF) % num_chunks
+					note = "HMAC"
+
+		return location, note
 
 	#create ring
 	#PRF.append(PRF[0])
@@ -170,7 +245,8 @@ def KeyReGen(PRF, GEN, num_chunks=4):
 			if check2 == GEN[i]:
 
 				#print "PRF removed", i
-				PRF_errors.remove(i)
+				if i in PRF_errors:
+					PRF_errors.remove(i)
 				if i in GEN_errors:
 					#print "GEN removed", i
 					GEN_errors.remove(i)
@@ -200,7 +276,8 @@ def KeyReGen(PRF, GEN, num_chunks=4):
 				if test ^ GEN[(ind+1)%num_chunks] == PRF[(ind+2)%num_chunks]:
 
 					PRF[(ind+1)%num_chunks] = test
-					print "Error found in PRF location %d. Corrected." % ((ind+1)%num_chunks)
+					print "Error found in location %d of %s key. Corrected." % (LocateError(ind, None))
+					break
 
 			else:
 
@@ -209,7 +286,8 @@ def KeyReGen(PRF, GEN, num_chunks=4):
 				if test ^ GEN[(ind-1)%num_chunks] == PRF[(ind-1)%num_chunks]:
 
 					PRF[ind] = test
-					print "Error found in PRF location %d. Corrected." % (ind)
+					print "Error found in location %d of %s key. Corrected." % (LocateError(ind, None))
+					break
 
 		elif len(PRF_errors) == 0 and len(GEN_errors) == 1:
 			#error in one GEN
@@ -217,18 +295,18 @@ def KeyReGen(PRF, GEN, num_chunks=4):
 			ind = list(GEN_errors)[0]
 
 			GEN[ind] = PRF[ind] ^ PRF[(ind+1)%num_chunks]
-
-			print "Error found in GEN location %d. Corrected." % (ind)
+			print "Error found in location %d of %s key. Corrected." % (LocateError(None, ind))
+			break
 
 
 	#print PRF_errors, GEN_errors
 
 	return PRF, GEN
 
-def FaultInjection(PRF, GEN):
-	#PRF[3] = PRF[3] * 2
-	GEN[3] = GEN[3] * 2
-	return PRF, GEN
+def FaultInjection(AES, HMAC):
+	#AES[1] = AES[1] * 2
+	#HMAC[0] = HMAC[0] * 2
+	return AES, HMAC
 
 
 def main():
@@ -239,12 +317,9 @@ def main():
 	print("----------")
 	t = TicToc()
 	t.tic()
-	sets = KeyGen()
+	PRF, GEN = KeyGen()
 	t.toc("Key Generation:")
 	print("----------")
-
-	PRF = sets[0]
-	GEN = sets[1]
 
 	#print "to begin", PRF, GEN
 
@@ -253,11 +328,11 @@ def main():
 	"""smooth ring just in case
 	"""
 
-	valid_ring = Correctness(sets[0], sets[1])
+	valid_ring = Correctness(PRF, GEN)
 	if valid_ring == False:
 		while valid_ring == False:
 			sets = KeyGen()
-			valid_ring = Correctness(sets[0], sets[1])
+			valid_ring = Correctness(PRF, GEN)
 		print "Key Ring Verified"
 	else:
 		print "Key Ring Verified"
@@ -266,53 +341,52 @@ def main():
 
 
 
-	"""perform swap to achieve maximum security
+	"""perform swapping to achieve security
 	"""
+	#not only performs center swap for added security, but also shuffles
+	#the PRF and GEN values to achieve the desired level of security
 
-	#key_sets = SecuritySwap(PRF, GEN)
-
-	#concatenate lists to form keys, we refrain for testing
-	#AES_key = key_sets[0][1]
-	#HMAC_key = key_sets[1][1]
-
+	AES_key_set, AES_inds, HMAC_key_set, HMAC_inds, swapped_inds = SecuritySwap(PRF, GEN)
+	#concatenate elts in sets to form keys, we refrain for testing
+	#swapped inds constains the inds of swapped elts for security
+	#AES has [1,2,7,4]
+	#HMAC has [5,6,3,8]
 
 
 	"""inject faults to test KeyReGen, which looks for and corrects errors
 	"""
 	#note that the inputs are not the swapped inputs, swapped inputs are
-	#the keys, for AES and HMAC
-	PRF_fault, GEN_fault = FaultInjection(PRF, GEN)
+	#the keys, for AES and HMAC, includes security swapping
+	AES_fault, HMAC_fault = FaultInjection(AES_key_set, HMAC_key_set)
 
 
-
+	#print PRF
 	"""inverse swap so that key can be regenerated
 	"""
-	#PRF_iswap_fault, GEN_iswap_fault = InverseSwap(PRF_fault, GEN_fault)
+	#swap back key sets to PRF and GEN form for regen
+	PRF_iswap_fault, GEN_iswap_fault = InverseSwap(AES_fault, HMAC_fault, AES_inds, HMAC_inds, swapped_inds)
 
+	#print "swapped back", PRF_iswap_fault, GEN_iswap_fault
 
 
 	"""Perform KeyReGen and measure complexity of regeneration
 	"""
-
+	#takes input in original PRF, GEN form, not the keyset form
 	t = TicToc()
 	t.tic()
-	PRF, GEN = KeyReGen(PRF_fault, GEN_fault)
+	regen_PRF, regen_GEN = KeyReGen(PRF_iswap_fault, GEN_iswap_fault, swapped_inds)
 	t.toc("Key Regeneration:")
 	print "----------"
 
-	#print "in the end", PRF, GEN
-
+	#print "regen", regen_PRF, regen_GEN
 
 	"""Test final correctness
 	"""
 
-	if Correctness(PRF, GEN) == True:
+	if Correctness(regen_PRF, regen_GEN) == True:
 		print "Verified. Ready for Encryption."
 	else:
 		print "Error"
-
-
-
 
 	return
 

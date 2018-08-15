@@ -2,10 +2,22 @@
 
 import random
 
-global lam, num_chunks, chunk_size
-lam = 256
-num_chunks = 4
-chunk_size = lam/num_chunks
+class Parameters():
+
+	def __init__(self):
+
+		self.lam = 256
+		self.num_chunks = 4
+		self.chunk_size = self.lam/self.num_chunks
+
+
+#define parameters for KeyGen
+P = Parameters()
+
+lam = P.lam
+num_chunks = P.num_chunks
+chunk_size = P.chunk_size
+
 
 class KeyGen():
 	#generated key by using PRF for a specified number of chunks
@@ -83,6 +95,8 @@ class KeyGen():
 
 						self.AES[(i+2)%num_chunks] = hold2
 						self.HMAC[(i+2)%num_chunks] = hold1
+
+
 
 
 

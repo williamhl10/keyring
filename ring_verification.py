@@ -1,11 +1,14 @@
 #file with functions to verify the key ring
 
-global lam, num_chunks, chunk_size
+from keyring_gen import Parameters
 
 #define security parameters for the scheme
-lam = 256
-num_chunks = 4
-chunk_size = lam/num_chunks
+P = Parameters()
+
+lam = P.lam
+num_chunks = P.num_chunks
+chunk_size = P.chunk_size
+
 
 def InverseSwap(AES_key, HMAC_key):
 	#function to move back to PRF and GEN sets from AES and HMAC sets
@@ -40,6 +43,55 @@ def InverseSwap(AES_key, HMAC_key):
 		GEN_set.sort(key=lambda ind: ind[0])
 
 	return PRF_set, GEN_set
+
+def ForwardSwap(PRF_set, GEN_set):
+	#create AES and HMAC keys from PRF and GEN sets
+	#sets are lists of lists such that [ind, val]
+
+	AES_list = []
+	HMAC_list = []
+
+	half = len(PRF_set)/2
+	count = 0
+
+	for i in range(0, len(PRF_set)):
+
+		if count < half:
+
+			AES_list.append(PRF_set[i])
+			AES_list.append(GEN_set[i])
+
+		else:
+
+			HMAC_list.append(PRF_set[i])
+			HMAC_list.append(GEN_set[i])
+
+		count += 1
+
+	AES_key = AES_list
+	HMAC_key = HMAC_list
+
+	#perform chunk movement for maximum security
+
+	for i in range(0, len(AES_key)):
+
+		if AES_key[i][0] % 2 == 1 and AES_key[(i+2)%num_chunks][0] % 2 == 1: #make sure vals from PRF
+
+			joint_member_test = AES_key[(i+2)%num_chunks][0] - 2 
+
+			#assess if the PRF vals are on the same AES joint
+
+			if AES_key[i][0] == joint_member_test:
+
+				hold1 = AES_key[(i+2)%num_chunks]
+				hold2 = HMAC_key[(i+2)%num_chunks]
+
+				#think of peeling off half, note the symmetry of the ring
+
+				AES_key[(i+2)%num_chunks] = hold2
+				HMAC_key[(i+2)%num_chunks] = hold1
+
+	return AES_key, HMAC_key
 
 
 def Verify(AES_key, HMAC_key):

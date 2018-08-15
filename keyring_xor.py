@@ -145,7 +145,9 @@ def KeyReGen(PRF, GEN, swapped_inds):
 	#check if key has been damamged and then correct it
 
 	#function to locate the location of AES and HMAC errors from PRF and GEN locations
+	#swapped inds has inds of AES and HMAC swap
 	def LocateError(ind_PRF, ind_GEN):
+		print swapped_inds
 
 		if ind_PRF == None:
 			print ind_GEN
@@ -304,8 +306,8 @@ def KeyReGen(PRF, GEN, swapped_inds):
 	return PRF, GEN
 
 def FaultInjection(AES, HMAC):
-	#AES[1] = AES[1] * 2
-	#HMAC[0] = HMAC[0] * 2
+	#AES[2] = AES[2] * 2
+	HMAC[1] = HMAC[1] * 2
 	return AES, HMAC
 
 

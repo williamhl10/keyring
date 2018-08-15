@@ -19,6 +19,9 @@ def KeyReGen(AES_error, HMAC_error):
 	PRF_error_locations = set()
 	GEN_error_locations = set()
 
+	#define list of tuples which represent undamaged joints in the ring
+	clean_joints = []
+
 	"""pin the locations of the errors"""
 
 	for i in range(0, len(PRF_error)):
@@ -33,6 +36,14 @@ def KeyReGen(AES_error, HMAC_error):
 
 				PRF_error_locations.add(i)
 
+		else:
+			#try to find all correct joints
+
+			print "hi"
+				
+			clean_joints.append((i,(i+1)%num_chunks))
+
+
 	for i in range(0, len(GEN_error)):
 
 		check = GEN_error[i][1] ^ PRF_error[i][1]
@@ -41,9 +52,9 @@ def KeyReGen(AES_error, HMAC_error):
 
 			GEN_error_locations.add(i)
 
-	print PRF_error_locations, GEN_error_locations
+	print PRF_error_locations, GEN_error_locations, clean_joints
 
-	"""Statements about error locations"""
+	"""Statements about error locations for single error events"""
 
 	if len(PRF_error_locations) == 1 and len(GEN_error_locations) == 0:
 		#PRF error location only inside set because there is an error in a neighboring GEN
@@ -78,6 +89,9 @@ def KeyReGen(AES_error, HMAC_error):
 
 		#correct location for AES key
 		GEN_error[loc] = [2*loc+2, correct_val]
+
+	"""Perform for multi-bit upsets"""
+
 
 
 

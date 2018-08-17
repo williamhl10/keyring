@@ -2,6 +2,7 @@
 
 from ring_verification import InverseSwap, ForwardSwap
 from keyring_gen import Parameters
+from pytictoc import TicToc
 
 #define security parameters for the scheme
 P = Parameters()
@@ -13,6 +14,9 @@ chunk_size = P.chunk_size
 def KeyReGen(AES_error, HMAC_error):
 	#AES_error and HMAC_error are objects from KeyGen that have
 	#been damaged by FaultInjection to simulate behavior in LEO
+
+	t = TicToc()
+	t.tic()
 
 	PRF_error, GEN_error = InverseSwap(AES_error, HMAC_error)
 
@@ -38,8 +42,6 @@ def KeyReGen(AES_error, HMAC_error):
 
 		else:
 			#try to find all correct joints
-
-			print "hi"
 				
 			clean_joints.append((i,(i+1)%num_chunks))
 
@@ -101,6 +103,8 @@ def KeyReGen(AES_error, HMAC_error):
 
 	#once the errors have been corrected, move to reform the key from the PRF and GEN sets
 	AES_fix, HMAC_fix = ForwardSwap(PRF_error, GEN_error)
+
+	t.toc("Key Ring")
 
 	return AES_fix, HMAC_fix
 

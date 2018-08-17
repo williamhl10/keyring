@@ -36,7 +36,7 @@ class KeyGen():
 			for i in range(0, num_chunks):
 
 				PRF_list.append([2*i+1, random.getrandbits(chunk_size)])
-				PRF_inds.append(i)
+				PRF_inds.append(i) #don't know if still in use
 
 			self.PRF = PRF_list
 

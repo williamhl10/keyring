@@ -5,6 +5,9 @@ from prettyprint import printKey
 from ring_verification import InverseSwap, Verify
 from SEU_model import FaultInjection
 from keyring_regen import KeyReGen
+from pytictoc import TicToc
+from triple import TripleRedundancy
+from copy import deepcopy
 
 #define security parameters for the scheme, from keyring_gen file
 P = Parameters()
@@ -39,12 +42,21 @@ def main():
 	#simulate upsets to the system
 	#for i in range(0, len(key.AES)): 
 
+	#store copy for reference later (and use in triple redundancy)
+	AES_copy = deepcopy(key.AES)
+	HMAC_copy = deepcopy(key.HMAC)
+
 	key.AES, key.HMAC = FaultInjection(key.AES, key.HMAC, None, None)
 
+	AES_copy_error = deepcopy(key.AES)
+	HMAC_copy_error = deepcopy(key.HMAC)
+
+
+	#incorporates a timer, uses same error as in Key Ring
+	TripleRedundancy(AES_copy, HMAC_copy, AES_copy_error, HMAC_copy_error)
 
 	#print "error", key.AES
 	#print "error", key.HMAC
-
 
 
 	"""Assess if the keys have incurred an SEU; if they have, attempt to regenerate the keys"""
@@ -58,7 +70,9 @@ def main():
 
 		print "Error in Key Ring... Locating..."
 
+		#incorporates a timer
 		key.AES, key.HMAC = KeyReGen(key.AES, key.HMAC)
+
 
 		#print "fix", key.AES
 		#print "fix", key.HMAC
@@ -70,6 +84,8 @@ def main():
 		else:
 
 			print "Error"
+
+
 
 
 

@@ -43,17 +43,17 @@ def main():
 	#for i in range(0, len(key.AES)): 
 
 	#store copy for reference later (and use in triple redundancy)
-	AES_copy = deepcopy(key.AES)
-	HMAC_copy = deepcopy(key.HMAC)
+	# AES_copy = deepcopy(key.AES)
+	# HMAC_copy = deepcopy(key.HMAC)
 
 	key.AES, key.HMAC = FaultInjection(key.AES, key.HMAC, None, None)
 
-	AES_copy_error = deepcopy(key.AES)
-	HMAC_copy_error = deepcopy(key.HMAC)
+	# AES_copy_error = deepcopy(key.AES)
+	# HMAC_copy_error = deepcopy(key.HMAC)
 
 
-	#incorporates a timer, uses same error as in Key Ring
-	TRbitComparison(AES_copy, HMAC_copy, AES_copy_error, HMAC_copy_error)
+	# #incorporates a timer, uses same error as in Key Ring
+	# TRbitComparison(AES_copy, HMAC_copy, AES_copy_error, HMAC_copy_error)
 
 	#print "error", key.AES
 	#print "error", key.HMAC

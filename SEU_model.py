@@ -25,8 +25,8 @@ def FaultInjection(AES_key, HMAC_key, AES_chunk=None, HMAC_chunk=None):
 
 	else:
 
-		AES_key[0][1] = AES_key[0][1] ^ random.getrandbits(chunk_size)
+		#AES_key[0][1] = AES_key[0][1] ^ random.getrandbits(chunk_size)
 
-		#HMAC_key[0][1] = HMAC_key[0][1] ^ random.getrandbits(chunk_size)
+		HMAC_key[2][1] = HMAC_key[2][1] ^ random.getrandbits(chunk_size)
 
 	return AES_key, HMAC_key

@@ -6,7 +6,7 @@ from ring_verification import InverseSwap, Verify
 from SEU_model import FaultInjection
 from keyring_regen import KeyReGen
 from pytictoc import TicToc
-from triple import TripleRedundancy
+from triple import TRbitComparison
 from copy import deepcopy
 
 #define security parameters for the scheme, from keyring_gen file
@@ -53,7 +53,7 @@ def main():
 
 
 	#incorporates a timer, uses same error as in Key Ring
-	TripleRedundancy(AES_copy, HMAC_copy, AES_copy_error, HMAC_copy_error)
+	TRbitComparison(AES_copy, HMAC_copy, AES_copy_error, HMAC_copy_error)
 
 	#print "error", key.AES
 	#print "error", key.HMAC

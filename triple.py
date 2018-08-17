@@ -114,9 +114,107 @@ def TRbitComparisonTest():
 
 	return 
 
-TRbitComparisonTest()
+#TRbitComparisonTest()
+
+def TRbitComparison(AES, HMAC, AES_error, HMAC_error):
+	#create three copies of each key for reundancy, in order to correct errors
+	AEScopy1 = deepcopy(AES)
+	AEScopy2 = deepcopy(AES)
+	AEScopy3 = deepcopy(AES)
+
+	HMACcopy1 = deepcopy(HMAC)
+	HMACcopy2 = deepcopy(HMAC)
+	HMACcopy3 = deepcopy(HMAC)
+
+	#inject upset (from Keyring) into the system at a random copy for AES
+	error_copy_AES = random.randint(1,3)
+
+	if error_copy_AES == 1:
+
+		AEScopy1 = AES_error
+
+	elif error_copy_AES == 2:
+
+		AEScopy2 = AES_error
+
+	else:
+
+		AEScopy3 = AES_error
+
+	#perform the above for the HMAC key
+	error_copy_HMAC = random.randint(1,3)
+
+	if error_copy_HMAC == 1:
+
+		HMACcopy1 = HMAC_error
+
+	elif error_copy_HMAC == 2:
+
+		HMACcopy2 = HMAC_error
+
+	else:
+
+		HMACcopy3 = HMAC_error
+
+	#make strings for comparisons
+	#use list type for indexing and item assignment in the event of error
+	AEScopy1_string = list(KeyOnly(AEScopy1))
+	AEScopy2_string = list(KeyOnly(AEScopy2))
+	AEScopy3_string = list(KeyOnly(AEScopy3))
+
+	HMACcopy1_string = list(KeyOnly(HMACcopy1))
+	HMACcopy2_string = list(KeyOnly(HMACcopy2))
+	HMACcopy3_string = list(KeyOnly(HMACcopy3))
+
+	t = TicToc()
+	t.tic()
+
+	#check for AES key
+	for b in range(0, len(AEScopy1_string)):
+
+		if AEScopy1_string[b] != AEScopy2_string[b]:
+
+			if AEScopy1_string[b] == AEScopy3_string[b]:
+
+				print "Reset AES 2"
+
+				AEScopy2_string[b] = AEScopy1_string[b]
+
+			else:
+				#copy2 and copy3 must be the same
+				print "Reset AES 1"
+				AEScopy1_string[b] = AEScopy2_string[b]
+
+		if AEScopy1_string[b] != AEScopy3_string[b]:
+			print "Reset AES 3"
+			#must be that copy1 and copy2 have majority
+			AEScopy3_string[b] = AEScopy1_string[b]
+
+	#check for HMAC key
+	for b in range(0, len(HMACcopy1_string)):
+
+		if HMACcopy1_string[b] != HMACcopy2_string[b]:
+
+			if HMACcopy1_string[b] == HMACcopy3_string[b]:
+
+				print "Reset HMAC 2"
+
+				HMACcopy2_string[b] = HMACcopy1_string[b]
+
+			else:
+				#copy2 and copy3 must be the same
+				print "Reset HMAC 1"
+				HMACcopy1_string[b] = HMACcopy2_string[b]
+
+		if HMACcopy1_string[b] != HMACcopy3_string[b]:
+			print "Reset HMAC 3"
+			#must be that copy1 and copy2 have majority
+			HMACcopy3_string[b] = HMACcopy1_string[b]	
 
 
+	t.toc("Triple Redundancy")
+
+	return 
 
 
 
